@@ -1,9 +1,7 @@
 package main
 
-import (
-	"github.com/jonwakefield/gomonitor/apiexamples"
-)
+import "github.com/jonwakefield/gomonitor/pkg/monitor"
 
 func main() {
-	apiexamples.Dockerlist()
+	monitor.Monitor()
 }
