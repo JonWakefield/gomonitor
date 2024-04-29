@@ -3,5 +3,5 @@ package main
 import "github.com/jonwakefield/gomonitor/pkg/monitor"
 
 func main() {
-	monitor.Monitor()
+	monitor.MainMonitor()
 }

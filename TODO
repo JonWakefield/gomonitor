@@ -1,0 +1,3 @@
+- Determine how to monitor ONLY select "events"
+- Send email notification 
+- Look at CPU / memory useage (if high, maybe just use Docker API directely? Could atleast try)

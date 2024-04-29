@@ -7,17 +7,31 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/events"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
+	"github.com/jonwakefield/gomonitor/pkg/email"
 	"github.com/jonwakefield/gomonitor/pkg/errors"
 )
 
-func Monitor() {
+type Set map[events.Action]bool
 
-	// options := types.EventsOptions{
-	// 	Since:   "2024-04-25T00:00:00Z",
-	// 	Until:   "2024-04-28T00:00:00Z",
-	// 	Filters: filters.Args{},
-	// }
+var containerActions = Set{
+	"attach":     true,
+	"start":      true,
+	"kill":       true,
+	"stop":       true,
+	"disconnect": true,
+	"die":        true,
+}
+
+func MainMonitor() {
+
+	options := types.EventsOptions{
+		Since:   "",
+		Until:   "",
+		Filters: filters.Args{},
+	}
 
 	wg := sync.WaitGroup{}
 
@@ -34,23 +48,33 @@ func Monitor() {
 		fmt.Println("Container ID: ", container.Status)
 	}
 
-	eventChan, errorChan := cli.Events(ctx, types.EventsOptions{})
+	// TODO: modify `options` to only look for our "desired" container actions
+	eventChan, errorChan := cli.Events(ctx, options)
 
 	// Process events and errors
 	wg.Add(1)
-	go func() {
-		for {
-			select {
-			case event := <-eventChan:
-				// Handle event
-				fmt.Println("Received event:", event)
-			case err := <-errorChan:
-				// Handle error
-				fmt.Println("Received error:", err)
-			}
-		}
-	}()
+	go monitorContainers(eventChan, errorChan)
 	wg.Wait()
 	fmt.Println("end of program")
 
 }
+
+func monitorContainers(eventChan <-chan events.Message, errorChan <-chan error) {
+	// function to monitor containers, called from a goroutine
+	for {
+		select {
+		case event := <-eventChan:
+			// Handle event
+			if containerActions[event.Action] {
+				go email.SendEmail()
+			}
+		case err := <-errorChan:
+			// Handle error
+			fmt.Println("Received error:", err)
+		}
+	}
+}
+
+// func getActiveContainers() {
+//
+// }
