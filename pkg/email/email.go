@@ -1,6 +1,7 @@
 package email
 
 import (
+	"crypto/tls"
 	"fmt"
 	"log"
 	"net/smtp"
@@ -8,69 +9,71 @@ import (
 
 // can add more here as
 type Email struct {
-	SenderAddress string
-	RecAddress    []string
-	Server        string
-	Port          string
-	UseTTL        bool
+	Sender   string
+	Password string
+	Receiver []string
+	Server   string
+	Port     string
+	UseTTL   bool
 }
 
-func (email *Email) SetupEmailServer() {
-}
-
-func (email *Email) ExampleSendEmail() {
+func (email *Email) SetupEmailServer(tls *tls.Config) *smtp.Client {
 
 	connStr := email.Server + ":" + email.Port
-	conn, err := smtp.Dial(connStr)
+	auth := smtp.PlainAuth("", email.Sender, email.Password, email.Server)
+
+	// create our connection to the smtp server
+	client, err := smtp.Dial(connStr)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// setup TLS encryption
+	err = client.StartTLS(tls)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = client.Auth(auth)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return client
+}
+
+// TODO probably want to pass in a body and subject etc.
+func (email *Email) SendEmail(client *smtp.Client) {
+
+	// send the sender
+	if err := client.Mail(email.Sender); err != nil {
+		log.Fatal(err)
+	}
+	if err := client.Rcpt(email.Receiver[0]); err != nil {
+		log.Fatal(err)
+	}
+
+	// // set the email body
+	wc, err := client.Data()
 	if err != nil {
 		log.Fatal(err) // TODO this probably doesn't have to be a fatal error, just log unable to setup email connection
 	}
 
-	// setup TLS
-	// err = conn.StartTLS()
+	_, err = fmt.Fprintf(wc, "This is from the improved email code base")
 	if err != nil {
-		fmt.Println("did not start TLS")
-		log.Fatal(err)
+		log.Fatal(err) // TODO this probably doesn't have to be a fatal error, just log unable to setup email connection
 	}
-
-	// send the sender
-	// if err := conn.Mail(email.SenderAddress); err != nil {
-	// log.Fatal(err)
-	// }
-
-	// if err := conn.Rcpt(email.RecAddress[0]); err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// // set the email body
-	// wc, err := conn.Data()
-	// if err != nil {
-	// 	log.Fatal(err) // TODO this probably doesn't have to be a fatal error, just log unable to setup email connection
-	// }
-
-	// _, err = fmt.Fprintf(wc, "This is an email body")
-	// if err != nil {
-	// 	log.Fatal(err) // TODO this probably doesn't have to be a fatal error, just log unable to setup email connection
-	// }
-
-	// err = wc.Close()
-	// if err != nil {
-	// 	log.Fatal(err) // TODO this probably doesn't have to be a fatal error, just log unable to setup email connection
-	// }
-
-	// // Send the QUIT command and close the connection.
-	// err = conn.Quit()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
 }
 
-// func SetupEmail(email Email) {
-// 	// sets up connection to email account
-// 	fmt.Println("inside setup email")
-// }
+func (email *Email) CheckTLSConnectionState(client *smtp.Client, displayTLSInfo bool) bool {
+	state, ok := client.TLSConnectionState()
 
-// func (email Email) SendEmail() {
-// fmt.Println("Sending email...")
-// }
+	if displayTLSInfo {
+		fmt.Println("Version is: ", state.Version)
+		fmt.Println("Handshakecomplete is: ", state.HandshakeComplete)
+		fmt.Println("CipherSuite is: ", state.CipherSuite)
+		fmt.Println("Protocal is: ", state.NegotiatedProtocol)
+		fmt.Println("ServerName is: ", state.ServerName)
+	}
+	return ok
+}
