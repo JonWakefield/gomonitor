@@ -17,7 +17,7 @@ type Email struct {
 	UseTTL   bool
 }
 
-func (email *Email) SetupEmailServer(tls *tls.Config) *smtp.Client {
+func (email *Email) SetupSMTPClient(tls *tls.Config) *smtp.Client {
 
 	connStr := email.Server + ":" + email.Port
 	auth := smtp.PlainAuth("", email.Sender, email.Password, email.Server)
@@ -42,27 +42,37 @@ func (email *Email) SetupEmailServer(tls *tls.Config) *smtp.Client {
 	return client
 }
 
-// TODO probably want to pass in a body and subject etc.
-func (email *Email) SendEmail(client *smtp.Client) {
+func (email *Email) SendEmail(client *smtp.Client, msg, subject string) {
 
-	// send the sender
+	// send MAIL command to the server
 	if err := client.Mail(email.Sender); err != nil {
 		log.Fatal(err)
 	}
-	if err := client.Rcpt(email.Receiver[0]); err != nil {
-		log.Fatal(err)
+
+	// send email to all provided recipients
+	for _, recipient := range email.Receiver {
+		if err := client.Rcpt(recipient); err != nil {
+			log.Fatal(err)
+		}
 	}
 
-	// // set the email body
+	// Send data command to server
 	wc, err := client.Data()
 	if err != nil {
-		log.Fatal(err) // TODO this probably doesn't have to be a fatal error, just log unable to setup email connection
+		log.Fatal(err) // TODO this doesn't have to be a fatal error, just log unable to setup email connection
 	}
 
-	_, err = fmt.Fprintf(wc, "This is from the improved email code base")
+	defer wc.Close()
+
+	emailFormatter := []byte("Subject: " + subject + "\r\n\r\n" + msg + "\r\n") // if we get fancy, this could end up being its own function
+
+	n, err := wc.Write(emailFormatter)
 	if err != nil {
-		log.Fatal(err) // TODO this probably doesn't have to be a fatal error, just log unable to setup email connection
+		log.Fatal(err) // TODO this doesn't have to be a fatal error, just log unable to setup email connection
 	}
+	fmt.Println("bytes written: ", n)
+
+	fmt.Println("Successfully sent email")
 }
 
 func (email *Email) CheckTLSConnectionState(client *smtp.Client, displayTLSInfo bool) bool {

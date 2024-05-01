@@ -17,6 +17,11 @@ func main() {
 
 	emailPassword := os.Getenv("EMAIL_PASSWORD")
 
+	recipients := []string{
+		"jonwakefield.mi@gmail.com",
+		// "buildincircuits@gmail.com",
+	}
+
 	tlsConfig := &tls.Config{
 		ServerName: "smtp.gmail.com",
 	}
@@ -25,17 +30,20 @@ func main() {
 	email := email.Email{
 		Sender:   "raspberrypijon.tx@gmail.com",
 		Password: emailPassword,
-		Receiver: []string{"jonwakefield.mi@gmail.com"},
+		Receiver: recipients,
 		Server:   "smtp.gmail.com",
 		Port:     "587",
 		UseTTL:   true,
 	}
 
-	smtpClient := email.SetupEmailServer(tlsConfig)
+	smtpClient := email.SetupSMTPClient(tlsConfig)
 	defer smtpClient.Quit()
-	// email.SendEmail(smtpClient)
-	email.CheckTLSConnectionState(smtpClient, false)
 
-	// email.ExampleSendEmail()
+	msg := "Oh no! One of your containers exploded. Ah!"
+	subject := "Docker container Update"
+	email.SendEmail(smtpClient, msg, subject)
+
+	// email.CheckTLSConnectionState(smtpClient, false)
+
 	// monitor.MainMonitor()
 }
