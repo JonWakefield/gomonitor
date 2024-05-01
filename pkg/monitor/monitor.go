@@ -10,7 +10,6 @@ import (
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
-	"github.com/jonwakefield/gomonitor/pkg/email"
 	"github.com/jonwakefield/gomonitor/pkg/errors"
 )
 
@@ -66,7 +65,8 @@ func monitorContainers(eventChan <-chan events.Message, errorChan <-chan error) 
 		case event := <-eventChan:
 			// Handle event
 			if containerActions[event.Action] {
-				go email.SendEmail()
+				fmt.Println(event.Action)
+				// go email.SendEmail()
 			}
 		case err := <-errorChan:
 			// Handle error
