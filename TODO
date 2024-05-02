@@ -3,3 +3,4 @@
 - Determine how to monitor ONLY select "events"
 - setup some logging
 - Improve error handleing
+- Maybe add an error field to the email struct type
