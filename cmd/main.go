@@ -6,17 +6,19 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/jonwakefield/gomonitor/pkg/email"
+	"github.com/jonwakefield/gomonitor/pkg/errors"
+	"github.com/jonwakefield/gomonitor/pkg/logging"
 )
 
 func main() {
 
 	err := godotenv.Load()
-	if err != nil {
-		panic(err)
-	}
+	errors.FatalOnErr(err)
+
+	// setup logging
+	logging.SetupLogger()
 
 	emailPassword := os.Getenv("EMAIL_PASSWORD")
-
 	recipients := []string{
 		"jonwakefield.mi@gmail.com",
 		// "buildincircuits@gmail.com",
@@ -39,9 +41,9 @@ func main() {
 	smtpClient := email.SetupSMTPClient(tlsConfig)
 	defer smtpClient.Quit()
 
-	msg := "Oh no! One of your containers exploded. Ah!"
-	subject := "Docker container Update"
-	email.SendEmail(smtpClient, msg, subject)
+	// msg := "Oh no! One of your containers exploded. Ah!"
+	// subject := "Docker container Update"
+	// email.SendEmail(smtpClient, msg, subject)
 
 	// email.CheckTLSConnectionState(smtpClient, false)
 

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/smtp"
+
+	"github.com/jonwakefield/gomonitor/pkg/errors"
 )
 
 // can add more here as
@@ -24,20 +26,14 @@ func (email *Email) SetupSMTPClient(tls *tls.Config) *smtp.Client {
 
 	// create our connection to the smtp server
 	client, err := smtp.Dial(connStr)
-
-	if err != nil {
-		log.Fatal(err)
-	}
+	errors.FatalOnErr(err)
 
 	// setup TLS encryption
 	err = client.StartTLS(tls)
-	if err != nil {
-		log.Fatal(err)
-	}
+	errors.FatalOnErr(err)
+
 	err = client.Auth(auth)
-	if err != nil {
-		log.Fatal(err)
-	}
+	errors.FatalOnErr(err)
 
 	return client
 }
@@ -45,9 +41,8 @@ func (email *Email) SetupSMTPClient(tls *tls.Config) *smtp.Client {
 func (email *Email) SendEmail(client *smtp.Client, msg, subject string) {
 
 	// send MAIL command to the server
-	if err := client.Mail(email.Sender); err != nil {
-		log.Fatal(err)
-	}
+	err := client.Mail(email.Sender)
+	errors.FatalOnErr(err)
 
 	// send email to all provided recipients
 	for _, recipient := range email.Receiver {
