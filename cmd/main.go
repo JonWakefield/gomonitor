@@ -46,9 +46,6 @@ func main() {
 	smtpClient := email.SetupSMTPClient(tlsConfig)
 	defer smtpClient.Quit()
 
-	// msg := "Oh no! One of your containers exploded. Ah!"
-	// subject := "Docker container Update"
-	// email.SendEmail(smtpClient, msg, subject)
 	// email.CheckTLSConnectionState(smtpClient, false)
 
 	// setup connection to Docker daemon
@@ -58,6 +55,8 @@ func main() {
 	defer dockerClient.Close() // defer connection close until return of parent function
 
 	docker.ListContainers(ctx, dockerClient)
-	docker.MonitorEvents(ctx, dockerClient)
+	// TODO: look into a better way to send emails from the `Monitor Events` function,
+	// TODO: maybe implement a channels to pass a signal saying that we need to send an email (idk)
+	docker.MonitorEvents(ctx, dockerClient, smtpClient, &email)
 
 }

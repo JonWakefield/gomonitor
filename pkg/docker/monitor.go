@@ -3,25 +3,29 @@ package docker
 import (
 	"context"
 	"fmt"
+	"net/smtp"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
+	"github.com/jonwakefield/gomonitor/pkg/email"
 )
 
 type Set map[events.Action]bool
 
+// NOTE: since we send an email on each "event", lets elimate "redudent" events (ex: kill, stop, die etc.)
 var containerActions = Set{
-	"attach":     true,
-	"start":      true,
-	"kill":       true,
-	"stop":       true,
-	"disconnect": true,
-	"die":        true,
+	"start":   true,
+	"restart": true,
+	"pause":   true,
+	"kill":    true,
+	"delete":  true,
+	"reload":  true,
 }
 
-func MonitorEvents(ctx context.Context, cli *client.Client) {
+func MonitorEvents(ctx context.Context, dockerClient *client.Client, smtpClient *smtp.Client, email *email.Email) {
 
 	options := types.EventsOptions{
 		Since:   "",
@@ -30,20 +34,36 @@ func MonitorEvents(ctx context.Context, cli *client.Client) {
 	}
 
 	// TODO: modify `options` to only look for our "desired" container actions
-	eventChan, errorChan := cli.Events(ctx, options)
+	eventChan, errorChan := dockerClient.Events(ctx, options)
 
-	// function to monitor containers, called from a goroutine
 	for {
 		select {
 		case event := <-eventChan:
 			// Handle event
 			if containerActions[event.Action] {
-				fmt.Println(event.Action)
-				// go email.SendEmail()
+				msg, subject := formatEmail(event)
+				go email.SendEmail(smtpClient, msg, subject)
 			}
 		case err := <-errorChan:
 			// Handle error
 			fmt.Println("Received error:", err)
 		}
 	}
+}
+
+func formatEmail(event events.Message) (string, string) {
+
+	// unpack docker events
+	action, actor, unixTime, type_ := event.Action, event.Actor, event.Time, event.Type
+	id, image, name := actor.ID, actor.Attributes["image"], actor.Attributes["name"]
+
+	// Convert Unix time to time.Time object
+	timeObj := time.Unix(unixTime, 0)
+
+	// Format time object as a human-readable string
+	formattedTime := timeObj.Format("2006-01-02 15:04:05")
+
+	subject := "Docker Event Registered"
+	msg := fmt.Sprintf("Event: %s \r\nContainer Name: %s \r\nContainer ID: %s \r\nImage: %s \r\nTime: %s \r\nType: %s", action, name, id, image, formattedTime, type_)
+	return msg, subject
 }

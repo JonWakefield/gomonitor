@@ -1,3 +1,4 @@
 - Look at CPU / memory useage (if high, maybe just use Docker API directely? Could atleast try)
 - Determine how to monitor ONLY select "events"
 - Maybe add an error field to the email struct type
+- Get logs from the container, (if a container crashes lets get the logs so we can debug)

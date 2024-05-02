@@ -17,8 +17,8 @@ func CreateClient(ctx context.Context) *client.Client {
 	return cli
 }
 
-func ListContainers(ctx context.Context, cli *client.Client) {
-	containers, err := cli.ContainerList(ctx, container.ListOptions{})
+func ListContainers(ctx context.Context, dockerClient *client.Client) {
+	containers, err := dockerClient.ContainerList(ctx, container.ListOptions{})
 	errors.PanicOnErr(err)
 
 	for _, container := range containers {

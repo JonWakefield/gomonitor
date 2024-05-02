@@ -61,9 +61,9 @@ func (email *Email) SendEmail(client *smtp.Client, msg, subject string) {
 	}
 	defer wc.Close()
 
-	emailFormatter := []byte("Subject: " + subject + "\r\n\r\n" + msg + "\r\n") // if we get fancy, this could end up being its own function
+	emailFormat := []byte("Subject: " + subject + "\r\n\r\n" + msg + "\r\n")
 
-	n, err := wc.Write(emailFormatter)
+	n, err := wc.Write(emailFormat)
 	if errors.LogIfError(err) {
 		return
 	}
