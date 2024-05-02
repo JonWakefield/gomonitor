@@ -38,6 +38,7 @@ func main() {
 		UseTTL:   true,
 	}
 
+	// TODO I could probably implement a recover statement if smtpClient connection fails, such that containers can still be monitored
 	smtpClient := email.SetupSMTPClient(tlsConfig)
 	defer smtpClient.Quit()
 
