@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/smtp"
+	"strconv"
 
 	"github.com/jonwakefield/gomonitor/pkg/errors"
 )
@@ -67,7 +68,7 @@ func (email *Email) SendEmail(client *smtp.Client, msg, subject string) {
 		return
 	}
 
-	slog.Debug("bytes written: ", n)
+	slog.Debug("bytes written:", strconv.Itoa(n), "")
 	slog.Info("Successfully sent email")
 }
 

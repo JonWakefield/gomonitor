@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"os"
 
 	"github.com/joho/godotenv"
+	"github.com/jonwakefield/gomonitor/pkg/docker"
 	"github.com/jonwakefield/gomonitor/pkg/email"
 	"github.com/jonwakefield/gomonitor/pkg/errors"
 	"github.com/jonwakefield/gomonitor/pkg/logging"
@@ -19,6 +21,8 @@ func main() {
 	logging.SetupLogger()
 
 	emailPassword := os.Getenv("EMAIL_PASSWORD")
+	emailSender := os.Getenv("EMAIL_SENDER")
+
 	recipients := []string{
 		"jonwakefield.mi@gmail.com",
 		// "buildincircuits@gmail.com",
@@ -30,7 +34,7 @@ func main() {
 
 	// create email struct
 	email := email.Email{
-		Sender:   "raspberrypijon.tx@gmail.com",
+		Sender:   emailSender,
 		Password: emailPassword,
 		Receiver: recipients,
 		Server:   "smtp.gmail.com",
@@ -45,8 +49,15 @@ func main() {
 	// msg := "Oh no! One of your containers exploded. Ah!"
 	// subject := "Docker container Update"
 	// email.SendEmail(smtpClient, msg, subject)
-
 	// email.CheckTLSConnectionState(smtpClient, false)
 
-	// monitor.MainMonitor()
+	// setup connection to Docker daemon
+	ctx := context.Background()
+
+	dockerClient := docker.CreateClient(ctx)
+	defer dockerClient.Close() // defer connection close until return of parent function
+
+	docker.ListContainers(ctx, dockerClient)
+	docker.MonitorEvents(ctx, dockerClient)
+
 }
