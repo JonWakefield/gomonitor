@@ -2,9 +2,11 @@ package email
 
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"log/slog"
 	"mime/multipart"
+	"net/http"
 	"net/smtp"
 )
 
@@ -56,6 +58,20 @@ func (msg *Message) ToBytes() []byte {
 	}
 
 	buf.WriteString(fmt.Sprintf("\r\n%s\r\n", msg.Body))
+	if withAttachments {
+		for k, v := range msg.Attachments {
+			buf.WriteString(fmt.Sprintf("\n\n--%s\n", boundary))
+			buf.WriteString(fmt.Sprintf("Content-Type: %s\n", http.DetectContentType(v)))
+			buf.WriteString("Content-Transfer-Encoding: base64\n")
+			buf.WriteString(fmt.Sprintf("Content-Disposition: attachment; filename=%s\n", k))
+
+			b := make([]byte, base64.StdEncoding.EncodedLen(len(v)))
+			base64.StdEncoding.Encode(b, v)
+			buf.Write(b)
+			buf.WriteString(fmt.Sprintf("\n--%s", boundary))
+		}
+		buf.WriteString("--")
+	}
 
 	return buf.Bytes()
 

@@ -2,8 +2,9 @@ package apiexamples
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"log"
-	"net/smtp"
 	"time"
 
 	"github.com/docker/docker/api/types/container"
@@ -12,7 +13,7 @@ import (
 )
 
 // test using the docker log functions
-func Dockerlog(smtp *smtp.Client, email *email.Email) {
+func Dockerlog(e *email.Email) {
 
 	// this function will be called when an event with the container happens,
 	// Get logs over the past 24 hours
@@ -34,7 +35,19 @@ func Dockerlog(smtp *smtp.Client, email *email.Email) {
 		log.Fatal(err)
 	}
 	defer reader.Close()
-	email.SendEmail(smtp, reader)
+
+	body := "Message body"
+	subject := "subject line"
+
+	msg := email.CreateMessage(body, subject)
+
+	data, err := io.ReadAll(reader)
+	if err != nil {
+		log.Fatal(err)
+	}
+	msg.Attachments["Filename.txt"] = data
+	fmt.Println("about to send email...")
+	e.SendEmail(msg)
 
 	// number, err := io.Copy(os.Stdout, reader)
 	// if err != nil && err != io.EOF {
