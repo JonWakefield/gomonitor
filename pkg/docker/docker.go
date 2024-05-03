@@ -19,7 +19,7 @@ func CreateClient(ctx context.Context) *client.Client {
 
 func ListContainers(ctx context.Context, dockerClient *client.Client) {
 	containers, err := dockerClient.ContainerList(ctx, container.ListOptions{})
-	errors.PanicOnErr(err)
+	errors.LogIfError(err)
 
 	for _, container := range containers {
 		fmt.Println("Container ID: ", container.Names)

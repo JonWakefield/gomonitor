@@ -1,4 +1,8 @@
+- Create program, process to monitor the docker cpu / memory usage
 - Look at CPU / memory useage (if high, maybe just use Docker API directely? Could atleast try)
+- put monitorContainers in a go routine
+- Get logs from the container, (if a container crashes, get logs from containen and send as attachment in email) (create the logs file in memory\*, send file, release memory) (see how much memory this uses)
 - Determine how to monitor ONLY select "events"
 - Maybe add an error field to the email struct type
-- Get logs from the container, (if a container crashes lets get the logs so we can debug)
+- Make a Docker `CheckDiskUsage` function using the `DiskUsage` docker function
+- Since log files can get quite log, just read in the last n bytes
