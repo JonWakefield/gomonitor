@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -22,31 +21,23 @@ func main() {
 
 	emailPassword := os.Getenv("EMAIL_PASSWORD")
 	emailSender := os.Getenv("EMAIL_SENDER")
+	emailServer := os.Getenv("EMAIL_SERVER")
+	emailPort := os.Getenv("EMAIL_PORT")
 
 	recipients := []string{
 		"jonwakefield.mi@gmail.com",
-		// "buildincircuits@gmail.com",
-	}
-
-	tlsConfig := &tls.Config{
-		ServerName: "smtp.gmail.com",
 	}
 
 	// create email struct
 	email := email.Email{
-		Sender:   emailSender,
-		Password: emailPassword,
-		Receiver: recipients,
-		Server:   "smtp.gmail.com",
-		Port:     "587",
-		UseTTL:   true,
+		Sender:     emailSender,
+		Password:   emailPassword,
+		Recipients: recipients,
+		Server:     emailServer,
+		Port:       emailPort,
 	}
 
-	// TODO I could probably implement a recover statement if smtpClient connection fails, such that containers can still be monitored
-	smtpClient := email.SetupSMTPClient(tlsConfig)
-	defer smtpClient.Quit()
-
-	// email.CheckTLSConnectionState(smtpClient, false)
+	email.SetupAuth()
 
 	// setup connection to Docker daemon
 	ctx := context.Background()
@@ -55,8 +46,6 @@ func main() {
 	defer dockerClient.Close() // defer connection close until return of parent function
 
 	docker.ListContainers(ctx, dockerClient)
-	// TODO: look into a better way to send emails from the `Monitor Events` function,
-	// TODO: maybe implement a channels to pass a signal saying that we need to send an email (idk)
-	docker.MonitorEvents(ctx, dockerClient, smtpClient, &email)
+	docker.MonitorEvents(ctx, dockerClient, &email)
 
 }

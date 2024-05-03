@@ -3,7 +3,6 @@ package docker
 import (
 	"context"
 	"fmt"
-	"net/smtp"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -25,7 +24,7 @@ var containerActions = Set{
 	"reload":  true,
 }
 
-func MonitorEvents(ctx context.Context, dockerClient *client.Client, smtpClient *smtp.Client, email *email.Email) {
+func MonitorEvents(ctx context.Context, dockerClient *client.Client, e *email.Email) {
 
 	options := types.EventsOptions{
 		Since:   "",
@@ -41,8 +40,9 @@ func MonitorEvents(ctx context.Context, dockerClient *client.Client, smtpClient 
 		case event := <-eventChan:
 			// Handle event
 			if containerActions[event.Action] {
-				msg, subject := formatEmail(event)
-				go email.SendEmail(smtpClient, msg, subject)
+				body, subject := formatEmail(event)
+				msg := email.CreateMessage(body, subject)
+				go e.SendEmail(msg)
 			}
 		case err := <-errorChan:
 			// Handle error

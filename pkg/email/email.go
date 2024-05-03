@@ -1,75 +1,64 @@
 package email
 
 import (
-	"crypto/tls"
+	"bytes"
 	"fmt"
 	"log/slog"
+	"mime/multipart"
 	"net/smtp"
-	"strconv"
-
-	"github.com/jonwakefield/gomonitor/pkg/errors"
 )
 
 // can add more here as
 type Email struct {
-	Sender   string
-	Password string
-	Receiver []string
-	Server   string
-	Port     string
-	UseTTL   bool
+	Sender     string
+	Password   string
+	Recipients []string
+	Server     string
+	Port       string
+	Auth       smtp.Auth
 }
 
-func (email *Email) SetupSMTPClient(tls *tls.Config) *smtp.Client {
-
-	connStr := email.Server + ":" + email.Port
-	auth := smtp.PlainAuth("", email.Sender, email.Password, email.Server)
-
-	// create our connection to the smtp server
-	client, err := smtp.Dial(connStr)
-	errors.PanicOnErr(err)
-
-	// setup TLS encryption
-	err = client.StartTLS(tls)
-	errors.PanicOnErr(err)
-
-	err = client.Auth(auth)
-	errors.PanicOnErr(err)
-
-	return client
+type Message struct {
+	Subject     string
+	Body        string
+	Attachments map[string][]byte
 }
 
-func (email *Email) SendEmail(client *smtp.Client, msg, subject string) {
+func (email *Email) SetupAuth() {
+	email.Auth = smtp.PlainAuth("", email.Sender, email.Password, email.Server)
+}
 
-	// send MAIL command to the server
-	err := client.Mail(email.Sender)
-	if errors.LogIfError(err) {
-		return
+func (email *Email) SendEmail(msg *Message) {
+	err := smtp.SendMail(fmt.Sprintf("%s:%s", email.Server, email.Port), email.Auth, email.Sender, email.Recipients, msg.ToBytes())
+	if err != nil {
+		slog.Error(fmt.Sprintf("%s", err))
 	}
-
-	// send email to all provided recipients
-	for _, recipient := range email.Receiver {
-		if err := client.Rcpt(recipient); err != nil {
-			errors.LogIfError(err)
-		}
-	}
-
-	// Send data command to server
-	wc, err := client.Data()
-	if errors.LogIfError(err) {
-		return
-	}
-	defer wc.Close()
-
-	emailFormat := []byte("Subject: " + subject + "\r\n\r\n" + msg + "\r\n")
-
-	n, err := wc.Write(emailFormat)
-	if errors.LogIfError(err) {
-		return
-	}
-
-	slog.Debug("bytes written:", strconv.Itoa(n), "")
 	slog.Info("Successfully sent email")
+}
+
+func CreateMessage(body, subject string) *Message {
+	return &Message{Subject: subject, Body: body, Attachments: make(map[string][]byte)}
+}
+
+func (msg *Message) ToBytes() []byte {
+	buf := bytes.NewBuffer(nil)
+	withAttachments := len(msg.Attachments) > 0
+	buf.WriteString(fmt.Sprintf("Subject: %s\n", msg.Subject))
+
+	buf.WriteString("MIME-Version: 1.0\n")
+	writer := multipart.NewWriter(buf)
+	boundary := writer.Boundary()
+	if withAttachments {
+		buf.WriteString(fmt.Sprintf("Content-Type: multipart/mixed; boundary=%s\n", boundary))
+		buf.WriteString(fmt.Sprintf("--%s\n", boundary))
+	} else {
+		buf.WriteString("Content-type: text/plain; charset=utf-8\n")
+	}
+
+	buf.WriteString(fmt.Sprintf("\r\n%s\r\n", msg.Body))
+
+	return buf.Bytes()
+
 }
 
 func (email *Email) CheckTLSConnectionState(client *smtp.Client, displayTLSInfo bool) bool {
