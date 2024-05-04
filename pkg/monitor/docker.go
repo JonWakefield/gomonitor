@@ -1,4 +1,4 @@
-package apiexamples
+package monitor
 
 import (
 	"context"
@@ -9,11 +9,29 @@ import (
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
-	"github.com/jonwakefield/gomonitor/pkg/email"
+	"github.com/jonwakefield/gomonitor/pkg/errors"
 )
 
+func CreateClient(ctx context.Context) *client.Client {
+
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	errors.PanicOnErr(err)
+
+	return cli
+}
+
+func ListContainers(ctx context.Context, dockerClient *client.Client) {
+	containers, err := dockerClient.ContainerList(ctx, container.ListOptions{})
+	errors.LogIfError(err)
+
+	for _, container := range containers {
+		fmt.Println("Container ID: ", container.Names)
+	}
+
+}
+
 // test using the docker log functions
-func Dockerlog(containerId string, e *email.Email) {
+func GetLogs(containerId string) []byte {
 
 	// get time from 24 hours ago
 	startTime := time.Now().Add(-24 * time.Hour)
@@ -31,23 +49,10 @@ func Dockerlog(containerId string, e *email.Email) {
 	}
 	defer reader.Close()
 
-	body := "Message body"
-	subject := "subject line"
-
-	msg := email.CreateMessage(body, subject)
-
-	data, err := io.ReadAll(reader)
+	b, err := io.ReadAll(reader)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fileName := containerId + "-logs" + ".txt"
-	msg.Attachments[fileName] = data
-	fmt.Println("about to send email...")
-	e.SendEmail(msg)
 
-	// number, err := io.Copy(os.Stdout, reader)
-	// if err != nil && err != io.EOF {
-	// log.Fatal(err)
-	// }
-	// fmt.Println(number)
+	return b
 }

@@ -5,10 +5,10 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
-	"github.com/jonwakefield/gomonitor/pkg/docker"
 	"github.com/jonwakefield/gomonitor/pkg/email"
 	"github.com/jonwakefield/gomonitor/pkg/errors"
 	"github.com/jonwakefield/gomonitor/pkg/logging"
+	"github.com/jonwakefield/gomonitor/pkg/monitor"
 )
 
 func main() {
@@ -42,10 +42,10 @@ func main() {
 	// setup connection to Docker daemon
 	ctx := context.Background()
 
-	dockerClient := docker.CreateClient(ctx)
+	dockerClient := monitor.CreateClient(ctx)
 	defer dockerClient.Close() // defer connection close until return of parent function
 
-	docker.ListContainers(ctx, dockerClient)
-	docker.MonitorEvents(ctx, dockerClient, &email)
+	monitor.ListContainers(ctx, dockerClient)
+	monitor.MonitorEvents(ctx, dockerClient, &email)
 
 }

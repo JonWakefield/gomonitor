@@ -1,8 +1,9 @@
-package docker
+package monitor
 
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -40,8 +41,11 @@ func MonitorEvents(ctx context.Context, dockerClient *client.Client, e *email.Em
 		case event := <-eventChan:
 			// Handle event
 			if containerActions[event.Action] {
+				slog.Info(fmt.Sprintf("Registered Docker Event: %s", event.Action))
 				body, subject := formatEmail(event)
 				msg := email.CreateMessage(body, subject)
+				logs := GetLogs(event.Actor.ID)
+				msg.AttachFile(logs, event.Actor.ID)
 				go e.SendEmail(msg)
 			}
 		case err := <-errorChan:

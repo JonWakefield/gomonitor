@@ -77,6 +77,11 @@ func (msg *Message) ToBytes() []byte {
 
 }
 
+func (msg *Message) AttachFile(logs []byte, id string) {
+	fileName := id + "-logs" + ".txt"
+	msg.Attachments[fileName] = logs
+}
+
 func (email *Email) CheckTLSConnectionState(client *smtp.Client, displayTLSInfo bool) bool {
 	state, ok := client.TLSConnectionState()
 
