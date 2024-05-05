@@ -26,6 +26,7 @@ func main() {
 
 	recipients := []string{
 		"jonwakefield.mi@gmail.com",
+		// ...
 	}
 
 	// create email struct
@@ -41,7 +42,7 @@ func main() {
 
 	// setup connection to Docker daemon
 	ctx := context.Background()
-
+	//
 	dockerClient := monitor.CreateClient(ctx)
 	defer dockerClient.Close() // defer connection close until return of parent function
 

@@ -36,6 +36,7 @@ func MonitorEvents(ctx context.Context, dockerClient *client.Client, e *email.Em
 	// TODO: modify `options` to only look for our "desired" container actions
 	eventChan, errorChan := dockerClient.Events(ctx, options)
 
+	slog.Info("Monitoring Docker Events...")
 	for {
 		select {
 		case event := <-eventChan:
