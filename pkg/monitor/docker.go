@@ -31,12 +31,11 @@ func ListContainers(ctx context.Context, dockerClient *client.Client) {
 }
 
 // test using the docker log functions
-func GetLogs(containerId string) []byte {
+func GetLogs(containerId string, timeDur time.Duration) []byte {
 
-	// get time from 24 hours ago
-	startTime := time.Now().Add(-24 * time.Hour)
+	startTime := time.Now().Add(-timeDur * time.Hour)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second) // beautiful
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second) // beautiful
 	defer cancel()
 
 	cli, _ := client.NewClientWithOpts(client.FromEnv)

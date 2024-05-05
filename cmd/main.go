@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"os"
+	"time"
 
+	"github.com/docker/docker/api/types/filters"
 	"github.com/joho/godotenv"
 	"github.com/jonwakefield/gomonitor/pkg/email"
 	"github.com/jonwakefield/gomonitor/pkg/errors"
@@ -12,6 +14,21 @@ import (
 )
 
 func main() {
+
+	var logStartTime time.Duration = 24 // unit: hours
+
+	// Keys:
+	// container
+	// network
+	// volume
+	// event
+	// Values: start, stop, kill, die, unmount, restart etc.
+
+	// setup custom events to listen for
+	eventFilters := filters.NewArgs()
+	eventFilters.Add("event", "start")
+	eventFilters.Add("event", "stop")
+	eventFilters.Add("event", "restart")
 
 	err := godotenv.Load()
 	errors.FatalOnErr(err)
@@ -40,13 +57,12 @@ func main() {
 
 	email.SetupAuth()
 
-	// setup connection to Docker daemon
 	ctx := context.Background()
-	//
+
 	dockerClient := monitor.CreateClient(ctx)
-	defer dockerClient.Close() // defer connection close until return of parent function
+	defer dockerClient.Close()
 
 	monitor.ListContainers(ctx, dockerClient)
-	monitor.MonitorEvents(ctx, dockerClient, &email)
 
+	monitor.MonitorEvents(ctx, dockerClient, &eventFilters, &email, logStartTime)
 }

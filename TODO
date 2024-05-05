@@ -1,7 +1,3 @@
-- Determine how to monitor ONLY select "events"
-
-Things to do with this project (for now):
-
-- Deploy project onto server
+- reformate the logs file to make sure it is decoded / encoded correctly
 - Set up an example main script, env.example
 - publish to GitHub
