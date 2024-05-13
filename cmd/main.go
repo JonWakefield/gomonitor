@@ -63,6 +63,5 @@ func main() {
 	defer dockerClient.Close()
 
 	monitor.ListContainers(ctx, dockerClient)
-
 	monitor.MonitorEvents(ctx, dockerClient, &eventFilters, &email, logStartTime)
 }
