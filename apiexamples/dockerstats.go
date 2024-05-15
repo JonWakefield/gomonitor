@@ -32,7 +32,6 @@ func DockerStats(ctx context.Context, client *client.Client) {
 			n, err := stats.Body.Read(buf)
 			if err != nil {
 				if err != io.EOF {
-					fmt.Println("Not nil!")
 					panic(err)
 
 				}

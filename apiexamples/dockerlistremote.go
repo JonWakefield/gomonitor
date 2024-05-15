@@ -13,7 +13,6 @@ import (
 func DockerListRemote() {
 
 	ctx := context.Background()
-	// cli, err := client.NewClientWithOpts(client.WithHost("tcp://159.223.166.57:2376"), client.WithAPIVersionNegotiation())
 	cli, err := client.NewClientWithOpts(client.WithHost("tcp://0.0.0.0:2376"), client.WithAPIVersionNegotiation())
 
 	if err != nil {

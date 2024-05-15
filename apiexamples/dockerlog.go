@@ -45,9 +45,4 @@ func Dockerlog(containerId string, e *email.Email) {
 	fmt.Println("about to send email...")
 	e.SendEmail(msg)
 
-	// number, err := io.Copy(os.Stdout, reader)
-	// if err != nil && err != io.EOF {
-	// log.Fatal(err)
-	// }
-	// fmt.Println(number)
 }
